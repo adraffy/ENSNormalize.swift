@@ -1,0 +1,34 @@
+//
+//  EmojiSequence.swift
+//  ENSNormalize
+//
+//  Created by raffy.eth on 8/24/25.
+//
+
+public struct EmojiSequence: Sendable, Equatable {
+    
+    public let normalized: [Cp]
+    public let beautified: [Cp]
+    
+    init (_ cps: [Cp]) {
+        beautified = cps
+        normalized = cps.contains(FE0F) ? cps.filter { $0 != FE0F } : cps
+    }
+    
+//    public var normalizedForm: String? {
+//        return try? implode(normalized)
+//    }
+  
+    public var isMangled: Bool {
+        return normalized.count < beautified.count
+    }
+    
+    public var hasZWJ: Bool {
+        return normalized.contains(ZWJ)
+    }
+    
+    public var description: String {
+        return "Emoji[\(toHexSequence(beautified))]"
+    }
+    
+}
