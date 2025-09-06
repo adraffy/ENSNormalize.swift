@@ -14,5 +14,5 @@ extension String {
     public func ensBeautified() throws -> String {
         return try ENSIP15.beautify(self)
     }
-
+    
 }

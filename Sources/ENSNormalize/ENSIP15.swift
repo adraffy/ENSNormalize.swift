@@ -19,6 +19,10 @@ public final class ENSIP15: Sendable {
         return try implode(try shared.beautify(explode(name)))
     }
 
+    public static func normalizeFragment(_ frag: String) throws -> String {
+        return try implode(try shared.normalizeFragment(explode(frag)))
+    }
+
     convenience init(_ nf: NF) {
         guard
             let url = Bundle.module.url(
@@ -32,22 +36,24 @@ public final class ENSIP15: Sendable {
     }
 
     public let nf: NF
-    let shouldEscape: Set<Cp>
-    let ignored: Set<Cp>
-    let combiningMarks: Set<Cp>
-    let maxNonSpacingMarks: UInt8
-    let nonSpacingMarks: Set<Cp>
-    let nfcCheck: Set<Cp>
-    let fenced: [Cp: String]
-    let mapped: [Cp: [Cp]]
-    let groups: [Group]
-    let emojis: [EmojiSequence]
-
+    public let shouldEscape: Set<Cp>
+    public let ignored: Set<Cp>
+    public let combiningMarks: Set<Cp>
+    public let maxNonSpacingMarks: UInt8
+    public let nonSpacingMarks: Set<Cp>
+    public let nfcCheck: Set<Cp>
+    public let fenced: [Cp: String]
+    public let mapped: [Cp: [Cp]]
+    public let groups: [Group]
+    public let emojis: [EmojiSequence]
+    public let wholes: [Whole]
+    
+    public let confusables: [Cp: Whole]
     let emojiRoot: EmojiNode
     let possiblyValid: Set<Cp>
 
-    let ASCII: Group
-    let EMOJI: Group
+    public let ASCII: Group
+    public let EMOJI: Group
     let LATIN: Group
     let GREEK: Group
 
@@ -63,6 +69,7 @@ public final class ENSIP15: Sendable {
         mapped = decoder.readMapped()
         groups = decoder.readGroups()
         emojis = decoder.readTree { EmojiSequence(cast($0)) }
+        wholes = decoder.readWholes(groups)
 
         // precompute: emoji trie
         let emojiRoot = EmojiNodeBuilder()
@@ -97,8 +104,23 @@ public final class ENSIP15: Sendable {
                 }
             }
         }
-        var valid = Set(nf.D(Array(union)))
+        var valid = union.union(nf.D(Array(union)))
 
+        // precompute: confusables
+        var confusables: [Cp: Whole] = [:]
+        for x in wholes {
+            if case let .confusable(_, confused, _) = x {
+                for cp in confused {
+                    confusables[cp] = x
+                }
+            }
+        }
+        for cp in union.subtracting(multi).subtracting(confusables.keys) {
+            confusables[cp] = .unique
+        }
+        self.confusables = confusables
+
+        // precompute: special groups
         ASCII = Group(-1, .ascii, "ASCII", valid.filter(isASCII))
         EMOJI = Group(-1, .emoji, "Emoji", [])
         LATIN = groups.first(where: { $0.name == "Latin" })!
@@ -195,12 +217,12 @@ public final class ENSIP15: Sendable {
         var i = 0
         while i < n {
             let (emoji, after) = findEmoji(cps, i)
-            if emoji != nil {
+            if let emoji = emoji {
                 if !buf.isEmpty {
                     ret.append(.text(decompose ? nf.D(buf) : nf.C(buf)))
                     buf.removeAll()
                 }
-                ret.append(.emoji(emoji!))
+                ret.append(.emoji(emoji))
                 i = after
             } else {
                 let cp = cps[i]
@@ -231,7 +253,7 @@ public final class ENSIP15: Sendable {
         var node = emojiRoot
         var i = start
         while i < cps.count {
-            guard let next = node.map?[cps[i]] else { break }
+            guard let next = node.children?[cps[i]] else { break }
             node = next
             i += 1
             if let e = node.emoji {
@@ -259,7 +281,9 @@ public final class ENSIP15: Sendable {
             }
             return []
         }
-        if emoji && chars.isEmpty { return EMOJI }
+        if emoji && chars.isEmpty {
+            return EMOJI
+        }
         try checkCombiningMarks(tokens)
         try checkFenced(norm)
         let unique = Array(Set(chars))
@@ -312,9 +336,9 @@ public final class ENSIP15: Sendable {
         var last = -1
         var prev = ""
         for i in 1..<n {
-            if let name = fenced[cps[0]] {
+            if let name = fenced[cps[i]] {
                 if last == i {
-                    throw NormError.fencedAdjacent(prev, name)
+                    throw NormError.fencedAdjacent(left: prev, right: name)
                 }
                 last = i + 1
                 prev = name
@@ -399,15 +423,36 @@ public final class ENSIP15: Sendable {
     }
 
     func checkWhole(_ group: Group, _ unique: [Cp]) throws {
-        // TODO
+        var shared: [Cp] = []
+        var intersection: Set<UInt8>?
+        for cp in unique {
+            switch confusables[cp] {
+            case .unique: return  // unique, non-confusable
+            case let .confusable(_, _, complements):
+                let complement = complements[cp]!  // exists by construction
+                intersection =
+                    intersection.map { $0.intersection(complement) }
+                    ?? Set(complement)
+            case .none: shared.append(cp)
+            }
+        }
+        if let indices = intersection {
+            for i in indices {
+                let other = groups[Int(i)]
+                if shared.allSatisfy({ other.contains($0) }) {
+                    throw NormError.confusable(group, other: other)
+                }
+            }
+        }
     }
 
     func createMixtureError(_ group: Group, _ cp: Cp) -> NormError {
         var what = safeCodepoint(cp)
         let other = groups.first { $0.primary.contains(cp) }
-        if other != nil {
-            what = "\(other!.name) \(what)"
+        if let other = other {
+            what = "\(other.name) \(what)"
         }
         return .illegalMixture(what, cp, group, other: other)
     }
+
 }

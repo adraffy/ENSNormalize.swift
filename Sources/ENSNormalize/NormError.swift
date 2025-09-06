@@ -15,11 +15,12 @@ public enum NormError: Error {
     case cmLeading(String)
     case cmAfterEmoji(EmojiSequence, String)
     case fencedLeading(String)
-    case fencedAdjacent(String, String)
+    case fencedAdjacent(left: String, right: String)
     case fencedTrailing(String)
     case illegalMixture(String, Cp, Group, other: Group?)
     case nsmExcessive(String, [Cp])
     case nsmDuplicate(String, Cp)
+    case confusable(Group, other: Group)
 
     var description: String {
         switch self {
@@ -39,8 +40,8 @@ public enum NormError: Error {
             return "emoji + combining mark: \(emoji) + \(what)"
         case .fencedLeading(let what):
             return "leading fenced: \(what)"
-        case .fencedAdjacent(let x, let y):
-            return "adjacent fenced: \(x) + \(y)"
+        case .fencedAdjacent(let left, let right):
+            return "adjacent fenced: \(left) + \(right)"
         case .fencedTrailing(let what):
             return "trailing fenced: \(what)"
         case .illegalMixture(let what, _, _, _):
@@ -49,6 +50,8 @@ public enum NormError: Error {
             return "duplicate non-spacing marks: \(what)"
         case .nsmExcessive(let what, _):
             return "excessive non-spacing marks: \(what)"
+        case .confusable(let group, let other):
+            return "whole-script confusable: \(group)/\(other)"
         }
     }
 

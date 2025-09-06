@@ -8,36 +8,31 @@
 public struct EmojiNode: Sendable {
 
     let emoji: EmojiSequence?
-    let map: [Cp: EmojiNode]?
-
-    init(_ emoji: EmojiSequence?, _ map: [Cp: EmojiNode]?) {
-        self.emoji = emoji
-        self.map = map
-    }
+    let children: [Cp: EmojiNode]?
 
 }
 
 class EmojiNodeBuilder {
 
     var emoji: EmojiSequence?
-    var map: [Cp: EmojiNodeBuilder]?
+    var children: [Cp: EmojiNodeBuilder]?
 
     func then(_ cp: Cp) -> EmojiNodeBuilder {
-        if map == nil {
-            map = [:]
+        if children == nil {
+            children = [:]
         }
-        if let node = map![cp] {
-            return node
+        if let child = children![cp] {
+            return child
         }
         let node = EmojiNodeBuilder()
-        map![cp] = node
+        children![cp] = node
         return node
     }
 
     func build() -> EmojiNode {
         return EmojiNode(
-            emoji,
-            map?.mapValues {
+            emoji: emoji,
+            children: children?.mapValues {
                 $0.build()
             }
         )

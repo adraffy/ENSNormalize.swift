@@ -5,7 +5,7 @@
 //  Created by raffy.eth on 8/24/25.
 //
 
-public struct Group: Sendable, Equatable {
+public struct Group: Sendable, Equatable, Hashable {
 
     public enum Kind: Sendable {
         case ascii

@@ -7,7 +7,7 @@
 
 import Foundation
 
-fileprivate func asSigned(_ i: Int) -> Int {
+private func asSigned(_ i: Int) -> Int {
     return (i & 1) != 0 ? (~i >> 1) : (i >> 1)
 }
 
@@ -183,6 +183,55 @@ class Decoder {
             let kind: Group.Kind = (bits & 1) != 0 ? .restricted : .unrestricted
             let cm = (bits & 2) != 0
             ret.append(Group(ret.count, kind, name, readSet(), readSet(), cm))
+        }
+        return ret
+    }
+
+    func readWholes(_ group: [Group]) -> [Whole] {
+        class Extent {
+            var groups: Set<Group> = []
+            var cps: [Cp] = []
+        }
+        var ret: [Whole] = []
+        var dedups: [[UInt8]: [UInt8]] = [:]
+        while true {
+            let confused = readSet()
+            if confused.isEmpty { break }
+            let valid = readSet()
+            let whole = WholeBuilder(valid, confused)
+            var cover: Set<Group> = []
+            var extents: [Extent] = []
+            for v in [valid, confused] {
+                for cp in v {
+                    let gs = group.filter { $0.contains(cp) }
+                    let extent =
+                        extents.first { e in
+                            gs.contains(where: { e.groups.contains($0) })
+                        }
+                        ?? {
+                            let temp = Extent()
+                            extents.append(temp)
+                            return temp
+                        }()
+                    extent.cps.append(cp)
+                    extent.groups.formUnion(gs)
+                    cover.formUnion(gs)
+                }
+            }
+            for extent in extents {
+                let complement = cover.filter { !extent.groups.contains($0) }
+                    .map { UInt8($0.index) }.sorted()
+                let dedup =
+                    dedups[complement]
+                    ?? {
+                        dedups[complement] = complement
+                        return complement
+                    }()
+                for cp in extent.cps {
+                    whole.complements[cp] = dedup
+                }
+            }
+            ret.append(whole.build())
         }
         return ret
     }
