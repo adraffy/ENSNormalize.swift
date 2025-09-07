@@ -22,7 +22,7 @@ public enum NormError: Error {
     case nsmDuplicate(String, Cp)
     case confusable(Group, other: Group)
 
-    var description: String {
+    public var errorDescription: String {
         switch self {
         case .unrepresentable(let cp):
             return "unrepresentable Unicode scalar: \(toHex(cp))"
