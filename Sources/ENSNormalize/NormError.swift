@@ -22,7 +22,7 @@ public enum NormError: Error {
     case nsmDuplicate(String, Cp)
     case confusable(Group, other: Group)
 
-    public var errorDescription: String {
+    public var description: String {
         switch self {
         case .unrepresentable(let cp):
             return "unrepresentable Unicode scalar: \(toHex(cp))"
@@ -44,8 +44,12 @@ public enum NormError: Error {
             return "adjacent fenced: \(left) + \(right)"
         case .fencedTrailing(let what):
             return "trailing fenced: \(what)"
-        case .illegalMixture(let what, _, _, _):
-            return "illegal mixture: \(what)"
+        case .illegalMixture(let what, _, let group, let other):
+            var what = what
+            if let other = other {
+                what = "\(other) \(what)"
+            }
+            return "illegal mixture: \(group) + \(what)"
         case .nsmDuplicate(let what, _):
             return "duplicate non-spacing marks: \(what)"
         case .nsmExcessive(let what, _):

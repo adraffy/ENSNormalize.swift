@@ -5,7 +5,7 @@
 //  Created by raffy.eth on 8/24/25.
 //
 
-public struct Group: Sendable, Equatable, Hashable {
+public struct Group: Sendable, Hashable, CustomStringConvertible {
 
     public enum Kind: Sendable {
         case ascii
@@ -42,7 +42,11 @@ public struct Group: Sendable, Equatable, Hashable {
     }
 
     public var description: String {
-        return name
+        if case .restricted = kind {
+            return "Restricted[\(name)]"
+        } else {
+            return name
+        }
     }
 
 }

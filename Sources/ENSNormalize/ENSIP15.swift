@@ -445,12 +445,12 @@ public final class ENSIP15: Sendable {
     }
 
     func createMixtureError(_ group: Group, _ cp: Cp) -> NormError {
-        var what = safeCodepoint(cp)
-        let other = groups.first { $0.primary.contains(cp) }
-        if let other = other {
-            what = "\(other.name) \(what)"
-        }
-        return .illegalMixture(what, cp, group, other: other)
+        return .illegalMixture(
+            safeCodepoint(cp),
+            cp,
+            group,
+            other: groups.first { $0.primary.contains(cp) }
+        )
     }
 
 }

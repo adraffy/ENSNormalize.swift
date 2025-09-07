@@ -5,7 +5,7 @@
 //  Created by raffy.eth on 8/24/25.
 //
 
-public struct EmojiSequence: Sendable, Equatable {
+public struct EmojiSequence: Sendable, Hashable, CustomStringConvertible {
 
     public let normalized: [Cp]
     public let beautified: [Cp]
