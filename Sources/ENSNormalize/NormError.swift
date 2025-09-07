@@ -5,7 +5,9 @@
 //  Created by raffy.eth on 8/24/25.
 //
 
-public enum NormError: Error {
+import Foundation
+
+public enum NormError: Error, LocalizedError {
 
     case unrepresentable(Cp)
     case emptyLabel
@@ -22,7 +24,7 @@ public enum NormError: Error {
     case nsmDuplicate(String, Cp)
     case confusable(Group, other: Group)
 
-    public var description: String {
+    public var errorDescription: String? {
         switch self {
         case .unrepresentable(let cp):
             return "unrepresentable Unicode scalar: \(toHex(cp))"
