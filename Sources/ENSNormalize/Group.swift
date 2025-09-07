@@ -41,4 +41,8 @@ public struct Group: Sendable, Equatable, Hashable {
         return primary.contains(cp) || secondary.contains(cp)
     }
 
+    public var description: String {
+        return name
+    }
+
 }

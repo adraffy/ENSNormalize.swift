@@ -47,7 +47,7 @@ public final class ENSIP15: Sendable {
     public let groups: [Group]
     public let emojis: [EmojiSequence]
     public let wholes: [Whole]
-    
+
     public let confusables: [Cp: Whole]
     let emojiRoot: EmojiNode
     let possiblyValid: Set<Cp>
@@ -173,7 +173,7 @@ public final class ENSIP15: Sendable {
     // otherwise: {HEX}
     public func safeCodepoint(_ cp: Cp) -> String {
         var s = ""
-        if !shouldEscape.contains(cp) && UnicodeScalar(cp) != nil {
+        if !shouldEscape.contains(cp) && Unicode.Scalar(cp) != nil {
             s.append("\"\(safeImplode([cp]))\" ")
         }
         s.append(toHexEscape(cp))
@@ -190,7 +190,7 @@ public final class ENSIP15: Sendable {
         }
         var ascii = true
         for cp in cps {
-            if !shouldEscape.contains(cp), let scalar = UnicodeScalar(cp) {
+            if !shouldEscape.contains(cp), let scalar = Unicode.Scalar(cp) {
                 s.unicodeScalars.append(scalar)
                 ascii = ascii && isASCII(cp)
             } else {

@@ -19,10 +19,11 @@ func cast<T: BinaryInteger>(_ v: [T]) -> [Cp] {
 }
 
 func implode(_ cps: [Cp]) throws -> String {
+    // this fails for surrogates and above MAX_CP (0x10FFFF)
     return String(
         String.UnicodeScalarView(
             try cps.map {
-                guard let scalar = UnicodeScalar($0) else {
+                guard let scalar = Unicode.Scalar($0) else {
                     throw NormError.unrepresentable($0)
                 }
                 return scalar
