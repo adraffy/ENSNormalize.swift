@@ -91,20 +91,20 @@ public final class ENSIP15: Sendable {
         self.emojiRoot = emojiRoot.build()
 
         // precompute: possibly valid
-        var union: Set<Cp> = []
+        var valid: Set<Cp> = [STOP]
         var multi: Set<Cp> = []
         for g in groups {
             for v in [g.primary, g.secondary] {
                 for cp in v {
-                    if union.contains(cp) {
+                    if valid.contains(cp) {
                         multi.insert(cp)
                     } else {
-                        union.insert(cp)
+                        valid.insert(cp)
                     }
                 }
             }
         }
-        var valid = union.union(nf.D(Array(union)))
+        possiblyValid = valid.union(nf.D(Array(valid)))
 
         // precompute: confusables
         var confusables: [Cp: Whole] = [:]
@@ -115,19 +115,17 @@ public final class ENSIP15: Sendable {
                 }
             }
         }
-        for cp in union.subtracting(multi).subtracting(confusables.keys) {
+        for cp in valid.subtracting(multi).subtracting(confusables.keys) {
             confusables[cp] = .unique
         }
         self.confusables = confusables
 
         // precompute: special groups
-        ASCII = Group(-1, .ascii, "ASCII", valid.filter(isASCII))
+        ASCII = Group(-1, .ascii, "ASCII", possiblyValid.filter(isASCII))
         EMOJI = Group(-1, .emoji, "Emoji", [])
         LATIN = groups.first(where: { $0.name == "Latin" })!
         GREEK = groups.first(where: { $0.name == "Greek" })!
 
-        valid.insert(STOP)
-        possiblyValid = valid
     }
 
     public func normalize(_ cps: [Cp]) throws -> [Cp] {
@@ -226,7 +224,7 @@ public final class ENSIP15: Sendable {
                 i = after
             } else {
                 let cp = cps[i]
-                if possiblyValid.contains(cp) || cp == STOP {
+                if possiblyValid.contains(cp) {
                     buf.append(cp)
                 } else if let replace = mapped[cp] {
                     buf += replace
