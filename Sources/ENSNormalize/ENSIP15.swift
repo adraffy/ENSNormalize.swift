@@ -76,7 +76,7 @@ public final class ENSIP15: Sendable {
         for emoji in emojis {
             var nodes = [emojiRoot]
             for cp in emoji.beautified {
-                if cp == FE0F {
+                if cp == 0xFE0F {
                     nodes.append(contentsOf: nodes.map { $0.then(cp) })
                 } else {
                     for (i, x) in nodes.enumerated() {

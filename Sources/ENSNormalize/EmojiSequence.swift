@@ -12,7 +12,7 @@ public struct EmojiSequence: Sendable, Hashable, CustomStringConvertible {
 
     init(_ cps: [Cp]) {
         beautified = cps
-        normalized = cps.contains(FE0F) ? cps.filter { $0 != FE0F } : cps
+        normalized = cps.contains(0xFE0F) ? cps.filter { $0 != 0xFE0F } : cps
     }
 
     public var normalizedForm: String {

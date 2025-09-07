@@ -7,12 +7,10 @@
 
 public typealias Cp = UInt32
 
-let HYPHEN: Cp = 0x2D
-
-let STOP: Cp = 0x2E
-let UNDERSCORE: Cp = 0x5F
-let ZWJ: Cp = 0x200D
-let FE0F: Cp = 0xFE0F
+let STOP = Cp(Unicode.Scalar("."))
+let HYPHEN = Cp(Unicode.Scalar("-"))
+let UNDERSCORE = Cp(Unicode.Scalar("_"))
+let ZWJ = Cp(0x200D)
 
 func cast<T: BinaryInteger>(_ v: [T]) -> [Cp] {
     return v.map { Cp($0) }
